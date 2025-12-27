@@ -29,23 +29,23 @@ jobs:
     - name: Set RDP Password
       run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
 
-    - name: Create ngrok Traffic Policy (IP Allow Only)
+    - name: Create ngrok Traffic Policy (VALID v3)
       shell: pwsh
       run: |
         @"
         inbound:
-          - name: allow-specific-ip
+          - name: allow-my-ip
+            expressions:
+              - src.ip == "$Env:ALLOWED_IP"
             actions:
               - type: allow
-                cidrs:
-                  - $Env:ALLOWED_IP
 
-          - name: deny-all
+          - name: deny-everything-else
             actions:
               - type: deny
         "@ | Out-File policy.yml -Encoding utf8
       env:
         ALLOWED_IP: ${{ secrets.ALLOWED_IP }}
 
-    - name: Start ngrok TCP Tunnel (RDP 3389)
+    - name: Start ngrok TCP Tunnel (RDP)
       run: .\ngrok\ngrok.exe tcp 3389 --traffic-policy-file=policy.yml
